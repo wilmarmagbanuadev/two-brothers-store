@@ -5,7 +5,10 @@ import { notFound } from "next/navigation";
 import { AddToCartButton } from "@/components/add-to-cart-button";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { getProduct, products } from "@/lib/products";
+import { getCurrentDirectusRole } from "@/lib/current-user";
+import { getProduct } from "@/lib/directus";
+
+export const dynamic = "force-dynamic";
 
 type ProductPageProps = {
   params: Promise<{
@@ -13,19 +16,13 @@ type ProductPageProps = {
   }>;
 };
 
-export function generateStaticParams() {
-  return products.map((product) => ({
-    id: product.id
-  }));
-}
-
 export default async function ProductPage({ params }: ProductPageProps) {
   const { id } = await params;
-  const product = getProduct(id);
-
+  const [product, currentRole] = await Promise.all([getProduct(id), getCurrentDirectusRole()]);
   if (!product) {
     notFound();
   }
+  const canAddToCart = currentRole === "Customer";
 
   return (
     <main className="mx-auto max-w-7xl px-4 py-10 sm:px-6 lg:px-8">
@@ -46,7 +43,13 @@ export default async function ProductPage({ params }: ProductPageProps) {
           <CardContent className="space-y-6">
             <p className="text-lg text-muted-foreground">{product.description}</p>
             <div className="text-3xl font-bold">{product.price}</div>
-            <AddToCartButton product={product} size="lg" className="w-full sm:w-auto" />
+            {canAddToCart ? (
+              <AddToCartButton product={product} size="lg" className="w-full sm:w-auto" />
+            ) : (
+              <Button asChild size="lg" className="w-full sm:w-auto">
+                <Link href="/sign-in/user">Sign In to Add to Cart</Link>
+              </Button>
+            )}
           </CardContent>
         </Card>
       </section>

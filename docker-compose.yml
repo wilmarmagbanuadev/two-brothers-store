@@ -1,0 +1,60 @@
+services:
+  directus:
+    image: directus/directus:11.17.4
+    container_name: two-brothers-directus
+    restart: unless-stopped
+    ports:
+      - "8055:8055"
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
+    environment:
+      SECRET: ${DIRECTUS_SECRET:-0a4a174b-37aa-4bec-a61e-e3aa5ca6fcf3}
+      ADMIN_EMAIL: ${DIRECTUS_ADMIN_EMAIL:-admin@twobrothers.store}
+      ADMIN_PASSWORD: ${DIRECTUS_ADMIN_PASSWORD:-d1r3ctu5}
+      DB_CLIENT: pg
+      DB_HOST: ${POSTGRES_HOST:-host.docker.internal}
+      DB_PORT: ${POSTGRES_PORT:-5432}
+      DB_DATABASE: ${POSTGRES_DATABASE:-tb_store}
+      DB_USER: ${POSTGRES_USER:-postgres}
+      DB_PASSWORD: ${POSTGRES_PASSWORD:-admin}
+      PUBLIC_URL: ${PUBLIC_DIRECTUS_URL:-http://localhost:8055}
+      CORS_ENABLED: "true"
+      CORS_ORIGIN: ${WEB_PUBLIC_URL:-http://localhost:3000}
+      STORAGE_LOCATIONS: local
+      STORAGE_LOCAL_DRIVER: local
+      STORAGE_LOCAL_ROOT: /directus/uploads
+    volumes:
+      - ./directus/uploads:/directus/uploads
+      - ./directus/extensions:/directus/extensions
+    healthcheck:
+      test:
+        - CMD
+        - node
+        - -e
+        - "fetch('http://127.0.0.1:8055/server/health').then((response) => process.exit(response.ok ? 0 : 1)).catch(() => process.exit(1))"
+      interval: 10s
+      timeout: 5s
+      retries: 12
+      start_period: 20s
+
+  web:
+    build:
+      context: ./web
+      dockerfile: Dockerfile
+      args:
+        NEXT_PUBLIC_DIRECTUS_URL: ${PUBLIC_DIRECTUS_URL:-http://localhost:8055}
+    container_name: two-brothers-web
+    restart: unless-stopped
+    depends_on:
+      directus:
+        condition: service_healthy
+    ports:
+      - "3000:3000"
+    environment:
+      NODE_ENV: production
+      PORT: 3000
+      HOSTNAME: 0.0.0.0
+      DIRECTUS_URL: http://directus:8055
+      NEXT_PUBLIC_DIRECTUS_URL: ${PUBLIC_DIRECTUS_URL:-http://localhost:8055}
+      DIRECTUS_STATIC_TOKEN: ${DIRECTUS_STATIC_TOKEN:-}
+      ADMIN_SESSION_SECRET: ${ADMIN_SESSION_SECRET:-replace-with-a-long-random-secret}

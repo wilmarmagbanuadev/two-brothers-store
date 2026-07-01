@@ -1,48 +1,26 @@
 services:
-  database:
-    image: postgres:16-alpine
-    container_name: two-brothers-directus-db
-    restart: unless-stopped
-    environment:
-      POSTGRES_DB: ${POSTGRES_DB:-directus}
-      POSTGRES_USER: ${POSTGRES_USER:-directus}
-      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-directus_password}
-    volumes:
-      - directus_db_data:/var/lib/postgresql/data
-    healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-directus} -d ${POSTGRES_DB:-directus}"]
-      interval: 10s
-      timeout: 5s
-      retries: 5
-
   directus:
-    image: directus/directus:11
+    image: directus/directus:11.17.4
     container_name: two-brothers-directus
     restart: unless-stopped
     ports:
-      - "${DIRECTUS_PORT:-8055}:8055"
-    depends_on:
-      database:
-        condition: service_healthy
+      - "8055:8055"
     environment:
-      SECRET: ${DIRECTUS_SECRET:-local-dev-secret-change-me}
-      ADMIN_EMAIL: ${DIRECTUS_ADMIN_EMAIL:-admin@twobrothers.store}
-      ADMIN_PASSWORD: ${DIRECTUS_ADMIN_PASSWORD:-change-this-password}
+      SECRET: 0a4a174b-37aa-4bec-a61e-e3aa5ca6fcf3
+      ADMIN_EMAIL: admin@twobrothers.store
+      ADMIN_PASSWORD: d1r3ctu5
       DB_CLIENT: pg
-      DB_HOST: database
+      DB_HOST: host.docker.internal
       DB_PORT: 5432
-      DB_DATABASE: ${POSTGRES_DB:-directus}
-      DB_USER: ${POSTGRES_USER:-directus}
-      DB_PASSWORD: ${POSTGRES_PASSWORD:-directus_password}
-      PUBLIC_URL: ${DIRECTUS_PUBLIC_URL:-http://localhost:8055}
+      DB_DATABASE: tb_store
+      DB_USER: postgres
+      DB_PASSWORD: admin
+      PUBLIC_URL: http://localhost:8055
       CORS_ENABLED: "true"
-      CORS_ORIGIN: ${DIRECTUS_CORS_ORIGIN:-http://localhost:3000}
+      CORS_ORIGIN: http://localhost:3000
       STORAGE_LOCATIONS: local
       STORAGE_LOCAL_DRIVER: local
       STORAGE_LOCAL_ROOT: /directus/uploads
     volumes:
       - ./uploads:/directus/uploads
       - ./extensions:/directus/extensions
-
-volumes:
-  directus_db_data:

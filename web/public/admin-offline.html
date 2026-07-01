@@ -1,0 +1,52 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <meta name="theme-color" content="#185d48">
+    <title>Two Brothers Admin</title>
+    <style>
+      * { box-sizing: border-box; }
+      body {
+        min-height: 100vh;
+        margin: 0;
+        display: grid;
+        place-items: center;
+        padding: 24px;
+        background: #f7faf9;
+        color: #10231d;
+        font-family: Arial, sans-serif;
+      }
+      main {
+        width: min(100%, 420px);
+        border: 1px solid #d9e5e1;
+        border-radius: 8px;
+        background: #fff;
+        padding: 32px;
+        text-align: center;
+      }
+      img { width: 88px; height: 88px; object-fit: contain; }
+      h1 { margin: 20px 0 8px; font-size: 24px; }
+      p { margin: 0; color: #587068; line-height: 1.5; }
+      button {
+        margin-top: 24px;
+        border: 0;
+        border-radius: 6px;
+        background: #185d48;
+        color: #fff;
+        padding: 11px 18px;
+        font: inherit;
+        font-weight: 600;
+        cursor: pointer;
+      }
+    </style>
+  </head>
+  <body>
+    <main>
+      <img src="/circle_logo_no_border.png" alt="Two Brothers Store">
+      <h1>Admin is offline</h1>
+      <p>Reconnect before viewing or changing store transactions.</p>
+      <button type="button" onclick="location.reload()">Try Again</button>
+    </main>
+  </body>
+</html>

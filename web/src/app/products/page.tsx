@@ -2,7 +2,10 @@ import Link from "next/link";
 
 import { ProductCard } from "@/components/product-card";
 import { Button } from "@/components/ui/button";
-import { categories, products } from "@/lib/products";
+import { getCurrentDirectusRole } from "@/lib/current-user";
+import { getCategories, getProducts } from "@/lib/directus";
+
+export const dynamic = "force-dynamic";
 
 type ProductsPageProps = {
   searchParams: Promise<{
@@ -13,10 +16,12 @@ type ProductsPageProps = {
 
 export default async function ProductsPage({ searchParams }: ProductsPageProps) {
   const { category, q } = await searchParams;
+  const [categories, products, currentRole] = await Promise.all([getCategories(), getProducts(), getCurrentDirectusRole()]);
+  const canAddToCart = currentRole === "Customer";
   const activeCategory = category ? decodeURIComponent(category) : undefined;
   const searchQuery = q ? decodeURIComponent(q).trim().toLowerCase() : "";
   const visibleProducts = products.filter((product) => {
-    const matchesCategory = activeCategory ? product.category === activeCategory : true;
+    const matchesCategory = activeCategory ? product.categorySlug === activeCategory : true;
     const matchesSearch = searchQuery
       ? [product.name, product.category, product.description].some((value) =>
           value.toLowerCase().includes(searchQuery)
@@ -28,8 +33,8 @@ export default async function ProductsPage({ searchParams }: ProductsPageProps) 
 
   return (
     <main className="mx-auto max-w-7xl px-4 py-10 sm:px-6 lg:px-8">
-      <div className="mb-8 flex flex-col gap-4 md:flex-row md:items-end md:justify-between">
-        <div>
+      <div className="mb-8 grid gap-5">
+        <div className="max-w-xl">
           <h1 className="text-3xl font-bold tracking-normal">Products</h1>
           <p className="mt-2 text-muted-foreground">
             {searchQuery
@@ -42,8 +47,8 @@ export default async function ProductsPage({ searchParams }: ProductsPageProps) 
             <Link href="/products">All</Link>
           </Button>
           {categories.map((item) => (
-            <Button key={item} asChild variant={activeCategory === item ? "default" : "outline"} size="sm">
-              <Link href={`/products?category=${encodeURIComponent(item)}`}>{item}</Link>
+            <Button key={item.slug} asChild variant={activeCategory === item.slug ? "default" : "outline"} size="sm">
+              <Link href={`/products?category=${encodeURIComponent(item.slug)}`}>{item.name}</Link>
             </Button>
           ))}
         </div>
@@ -52,7 +57,7 @@ export default async function ProductsPage({ searchParams }: ProductsPageProps) 
       {visibleProducts.length > 0 ? (
         <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
           {visibleProducts.map((product) => (
-            <ProductCard key={product.id} product={product} />
+            <ProductCard key={product.id} product={product} canAddToCart={canAddToCart} />
           ))}
         </div>
       ) : (

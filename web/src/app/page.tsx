@@ -4,20 +4,10 @@ import { ArrowRight, Clock, PackageCheck, ShieldCheck, ShoppingBasket, Sparkles,
 
 import { ProductCard } from "@/components/product-card";
 import { Button } from "@/components/ui/button";
-import { categories, products } from "@/lib/products";
+import { getCurrentDirectusRole } from "@/lib/current-user";
+import { getCategoriesState, getProductsState } from "@/lib/directus";
 
-const categoryImages: Record<string, string> = {
-  Beer: "https://images.unsplash.com/photo-1608270586620-248524c67de9?auto=format&fit=crop&w=900&q=80",
-  "Soft Drinks": "https://images.unsplash.com/photo-1622483767028-3f66f32aef97?auto=format&fit=crop&w=900&q=80",
-  "Chips & Curls": "https://images.unsplash.com/photo-1566478989037-eec170784d0b?auto=format&fit=crop&w=900&q=80",
-  "Canned Goods": "https://images.unsplash.com/photo-1584269600464-37b1b58a9fe7?auto=format&fit=crop&w=900&q=80",
-  Condiments: "https://images.unsplash.com/photo-1615485290382-441e4d049cb5?auto=format&fit=crop&w=900&q=80",
-  Rice: "https://images.unsplash.com/photo-1586201375761-83865001e31c?auto=format&fit=crop&w=900&q=80",
-  Feeds: "https://images.unsplash.com/photo-1548550023-2bdb3c5beed7?auto=format&fit=crop&w=900&q=80",
-  "Ice Cream": "https://images.unsplash.com/photo-1563805042-7684c019e1cb?auto=format&fit=crop&w=900&q=80",
-  Toiletries: "https://images.unsplash.com/photo-1556228578-8c89e6adf883?auto=format&fit=crop&w=900&q=80",
-  Others: "https://images.unsplash.com/photo-1607328874071-45a9cd600644?auto=format&fit=crop&w=900&q=80"
-};
+export const dynamic = "force-dynamic";
 
 const services = [
   {
@@ -43,7 +33,15 @@ const steps = [
   "Review your order and checkout"
 ];
 
-export default function LandingPage() {
+export default async function LandingPage() {
+  const [categoryState, productState, currentRole] = await Promise.all([
+    getCategoriesState(),
+    getProductsState(),
+    getCurrentDirectusRole()
+  ]);
+  const categories = categoryState.data;
+  const products = productState.data;
+  const canAddToCart = currentRole === "Customer";
   const featured = products.filter((product) => product.featured);
 
   return (
@@ -104,19 +102,21 @@ export default function LandingPage() {
           <p className="mt-2 text-muted-foreground">The menu is organized around the shopping trips customers make most often.</p>
         </div>
         <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-5">
+
           {categories.map((category) => (
-            <Link
-              key={category}
-              href={`/products?category=${encodeURIComponent(category)}`}
+               <Link
+              key={category.slug}
+              href={`/products?category=${encodeURIComponent(category.slug)}`}
               className="group relative min-h-48 overflow-hidden rounded-lg"
             >
-              <Image src={categoryImages[category]} alt={category} fill className="object-cover transition duration-300 group-hover:scale-105" />
+              <Image src={category.imageUrl} alt={category.name} fill className="object-cover transition duration-300 group-hover:scale-105" />
               <div className="absolute inset-0 bg-black/35" />
               <div className="absolute inset-x-0 bottom-0 p-4 text-white">
-                <h3 className="text-lg font-semibold">{category}</h3>
+                <h3 className="text-lg font-semibold">{category.name}</h3>
                 <p className="mt-1 text-sm text-white/80">Browse items</p>
               </div>
             </Link>
+           
           ))}
         </div>
       </section>
@@ -183,7 +183,7 @@ export default function LandingPage() {
         </div>
         <div className="grid gap-6 md:grid-cols-2">
           {featured.map((product) => (
-            <ProductCard key={product.id} product={product} />
+            <ProductCard key={product.id} product={product} canAddToCart={canAddToCart} />
           ))}
         </div>
       </section>

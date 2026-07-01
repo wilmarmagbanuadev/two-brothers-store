@@ -2,7 +2,7 @@
 
 import { createContext, useContext, useEffect, useMemo, useState } from "react";
 
-import type { Product } from "@/lib/products";
+import type { Product } from "@/lib/directus";
 
 export type CartItem = Product & {
   quantity: number;

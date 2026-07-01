@@ -1,17 +1,55 @@
 # Two Brothers Store
 
-This repository has two separate apps:
+This repository contains:
 
-- `web/` - Next.js storefront
-- `directus/` - Directus CMS/API running with Docker
+- `web/` - Next.js storefront and admin PWA
+- `directus/` - Directus CMS/API
+- `docker-compose.yml` - production web and Directus stack
 
 ## Requirements
 
 - Node.js
 - npm
 - Docker Desktop
+- PostgreSQL reachable from Docker
 
 On Windows PowerShell, prefer `npm.cmd` instead of `npm` if script execution policy blocks `npm.ps1`.
+
+## Run The Production Stack
+
+From the repository root:
+
+```powershell
+Copy-Item .env.example .env
+```
+
+Update `.env` with the Directus, PostgreSQL, and session secrets, then run:
+
+```powershell
+docker compose up -d --build
+```
+
+Open:
+
+```text
+Web:      http://localhost:3000
+Directus: http://localhost:8055
+```
+
+The web container uses the production standalone Next.js server. It starts only after the Directus health check passes.
+
+View status and logs:
+
+```powershell
+docker compose ps
+docker compose logs -f web directus
+```
+
+Stop both services:
+
+```powershell
+docker compose down
+```
 
 ## Run The Web App
 
@@ -95,9 +133,9 @@ Then start it again:
 docker compose up -d
 ```
 
-## Run Both Apps
+## Run Both Apps For Development
 
-Use two terminals.
+Use two terminals when developing without the production web container.
 
 Terminal 1:
 
@@ -119,6 +157,19 @@ URLs:
 Web:      http://localhost:3000
 Directus: http://localhost:8055
 ```
+
+## Connect Web To Directus
+
+Create `web/.env.local`:
+
+```env
+NEXT_PUBLIC_DIRECTUS_URL=http://localhost:8055
+DIRECTUS_URL=http://localhost:8055
+DIRECTUS_STATIC_TOKEN=
+ADMIN_SESSION_SECRET=replace-with-a-long-random-secret
+```
+
+For local development, allow public read access to the required storefront collections or configure `DIRECTUS_STATIC_TOKEN`. When Directus is unavailable, public routes enter maintenance mode while the prepared admin PWA can continue using its offline data.
 
 ## Folders
 

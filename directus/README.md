@@ -36,3 +36,15 @@ docker compose down -v
 
 - `uploads/` stores uploaded files from Directus.
 - `extensions/` is mounted for custom Directus extensions.
+
+## Store Database Schema
+
+The starter store tables live in `schema.sql`. Run it against the `tb_store` database in your local Postgres instance.
+
+If `psql` is installed:
+
+```powershell
+psql -h localhost -U postgres -d tb_store -f schema.sql
+```
+
+You can also open `schema.sql` in pgAdmin or another Postgres client and run it in the `tb_store` database.

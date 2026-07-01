@@ -4,9 +4,9 @@ import Link from "next/link";
 import { AddToCartButton } from "@/components/add-to-cart-button";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import type { Product } from "@/lib/products";
+import type { Product } from "@/lib/directus";
 
-export function ProductCard({ product }: { product: Product }) {
+export function ProductCard({ product, canAddToCart }: { product: Product; canAddToCart: boolean }) {
   return (
     <Card className="overflow-hidden">
       <div className="relative h-52 w-full">
@@ -24,7 +24,13 @@ export function ProductCard({ product }: { product: Product }) {
             <Button asChild size="sm" variant="outline">
               <Link href={`/products/${product.id}`}>View</Link>
             </Button>
-            <AddToCartButton product={product} size="sm" />
+            {canAddToCart ? (
+              <AddToCartButton product={product} size="sm" />
+            ) : (
+              <Button asChild size="sm">
+                <Link href="/sign-in/user">Sign In</Link>
+              </Button>
+            )}
           </div>
         </div>
       </CardContent>

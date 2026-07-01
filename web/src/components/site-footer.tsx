@@ -2,20 +2,24 @@ import Image from "next/image";
 import Link from "next/link";
 import { Mail, MapPin, Phone } from "lucide-react";
 
-import { categories } from "@/lib/products";
+import type { Category } from "@/lib/directus";
 
-export function SiteFooter() {
+type SiteFooterProps = {
+  categories: Category[];
+};
+
+export function SiteFooter({ categories }: SiteFooterProps) {
   return (
     <footer className="border-t bg-muted/40">
       <div className="mx-auto grid max-w-7xl gap-10 px-4 py-12 sm:px-6 md:grid-cols-[1.4fr_1fr_1fr_1fr] lg:px-8">
         <div>
           <Link href="/" className="flex items-center gap-2 font-semibold">
             <Image
-              src="/two-brothers-logo.png"
+              src="/circle_logo_no_border.png"
               alt="Two Brothers Store logo"
               width={40}
               height={40}
-              className="h-10 w-10 rounded-md object-contain"
+              className="h-10 w-10 rounded-full object-contain"
             />
             <span>Two Brothers Store</span>
           </Link>
@@ -29,8 +33,8 @@ export function SiteFooter() {
           <div className="mt-4 grid gap-3 text-sm text-muted-foreground">
             <Link href="/products" className="hover:text-foreground">All Products</Link>
             {categories.slice(0, 4).map((category) => (
-              <Link key={category} href={`/products?category=${encodeURIComponent(category)}`} className="hover:text-foreground">
-                {category}
+              <Link key={category.slug} href={`/products?category=${encodeURIComponent(category.slug)}`} className="hover:text-foreground">
+                {category.name}
               </Link>
             ))}
           </div>
