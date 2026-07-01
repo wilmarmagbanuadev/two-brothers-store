@@ -380,12 +380,29 @@ export async function saveAdminOrder(payload: AdminOrderPayload) {
 
     if (existing.data.data[0]) {
       return {
+        ok: true as const,
         order: existing.data.data[0]
       };
     }
   }
 
-  const items = payload.items.filter((item) => item.productId && Number(item.quantity) > 0);
+  const quantitiesByProduct = new Map<string, number>();
+
+  payload.items.forEach((item) => {
+    const productId = item.productId?.trim();
+    const quantity = Number(item.quantity);
+
+    if (!productId || !Number.isFinite(quantity) || quantity <= 0) {
+      return;
+    }
+
+    quantitiesByProduct.set(productId, (quantitiesByProduct.get(productId) ?? 0) + quantity);
+  });
+
+  const items = Array.from(quantitiesByProduct, ([productId, quantity]) => ({
+    productId,
+    quantity
+  }));
 
   if (!payload.customerEmail || !items.length) {
     throw new Error("Please choose a customer and add at least one item.");
@@ -415,11 +432,13 @@ export async function saveAdminOrder(payload: AdminOrderPayload) {
   }
 
   const productParams = new URLSearchParams({
-    fields: "id,name,sku,barcode,price"
-  });
-
-  items.forEach((item, index) => {
-    productParams.set(`filter[id][_in][${index}]`, item.productId);
+    fields: "id,name,sku,barcode,price",
+    filter: JSON.stringify({
+      id: {
+        _in: items.map((item) => item.productId)
+      }
+    }),
+    limit: String(items.length)
   });
 
   const products = await directusActionRequest<DirectusListResponse<Product>>(
@@ -428,8 +447,15 @@ export async function saveAdminOrder(payload: AdminOrderPayload) {
     customer.session
   );
   const productsById = new Map(products.data.data.map((product) => [product.id, product]));
-  if (productsById.size !== items.length) {
-    throw new Error("Some selected products are no longer available.");
+  const unavailableItems = items.filter((item) => !productsById.has(item.productId));
+
+  if (unavailableItems.length) {
+    return {
+      ok: false as const,
+      reason: "unavailable_products" as const,
+      message: "One or more selected products are unavailable. The catalog has been refreshed.",
+      unavailableProductIds: unavailableItems.map((item) => item.productId)
+    };
   }
   const subtotal = items.reduce((total, item) => {
     const product = productsById.get(item.productId);
@@ -482,6 +508,7 @@ export async function saveAdminOrder(payload: AdminOrderPayload) {
   );
 
   return {
+    ok: true as const,
     order: order.data.data
   };
 }

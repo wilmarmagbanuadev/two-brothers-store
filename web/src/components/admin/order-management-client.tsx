@@ -505,6 +505,16 @@ export function OrderManagementClient() {
 
       const data = await saveAdminOrder(payload);
 
+      if (!data.ok) {
+        await removeQueuedAdminOrder(clientReference);
+        setItems((current) =>
+          current.filter((item) => !data.unavailableProductIds.includes(item.productId))
+        );
+        setError(data.message);
+        await loadOrders();
+        return;
+      }
+
       await removeQueuedAdminOrder(clientReference);
       setQueuedOrders(await listQueuedAdminOrders());
       setSuccess(`Order ${data.order.order_number} saved.`);
@@ -1302,7 +1312,7 @@ export function OrderManagementClient() {
               </div>
 
               {items.map((item, index) => (
-                <div key={index} className="grid gap-2 sm:grid-cols-[minmax(0,1fr)_120px_40px]">
+                <div key={index} className="grid min-w-0 gap-2 sm:grid-cols-[minmax(0,1fr)_168px] sm:items-center">
                   <select
                     value={item.productId}
                     onChange={(event) =>
@@ -1318,23 +1328,26 @@ export function OrderManagementClient() {
                       </option>
                     ))}
                   </select>
-                  <QuantityStepper
-                    value={item.quantity}
-                    onChange={(quantity) =>
-                      setItems((current) => current.map((entry, entryIndex) => entryIndex === index ? { ...entry, quantity: String(quantity) } : entry))
-                    }
-                    label={`quantity for item ${index + 1}`}
-                  />
-                  <Button
-                    type="button"
-                    variant="ghost"
-                    size="icon"
-                    aria-label="Remove item"
-                    onClick={() => setItems((current) => current.filter((_, entryIndex) => entryIndex !== index))}
-                    disabled={items.length === 1}
-                  >
-                    <Trash2 className="h-4 w-4" />
-                  </Button>
+                  <div className="grid min-w-0 grid-cols-[minmax(0,1fr)_40px] items-center gap-2 sm:grid-cols-[120px_40px]">
+                    <QuantityStepper
+                      value={item.quantity}
+                      onChange={(quantity) =>
+                        setItems((current) => current.map((entry, entryIndex) => entryIndex === index ? { ...entry, quantity: String(quantity) } : entry))
+                      }
+                      label={`quantity for item ${index + 1}`}
+                    />
+                    <Button
+                      type="button"
+                      variant="outline"
+                      size="icon"
+                      aria-label="Remove item"
+                      title="Remove item"
+                      onClick={() => setItems((current) => current.filter((_, entryIndex) => entryIndex !== index))}
+                      disabled={items.length === 1}
+                    >
+                      <Trash2 className="h-4 w-4" />
+                    </Button>
+                  </div>
                 </div>
               ))}
               <Button type="button" variant="outline" onClick={() => setItems((current) => [...current, { productId: "", quantity: "1" }])}>

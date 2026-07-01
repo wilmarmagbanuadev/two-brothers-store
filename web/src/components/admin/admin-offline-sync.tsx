@@ -58,7 +58,12 @@ export function AdminOfflineSync() {
 
       for (const queued of queuedOrders) {
         try {
-          await saveAdminOrder(queued.payload);
+          const result = await saveAdminOrder(queued.payload);
+
+          if (!result.ok) {
+            throw new Error(result.message);
+          }
+
           await removeQueuedAdminOrder(queued.clientReference);
           didSyncOrder = true;
         } catch (error) {
