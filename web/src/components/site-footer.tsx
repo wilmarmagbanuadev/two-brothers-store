@@ -9,6 +9,8 @@ type SiteFooterProps = {
 };
 
 export function SiteFooter({ categories }: SiteFooterProps) {
+  const appVersion = process.env.APP_VERSION ?? "1";
+
   return (
     <footer className="border-t bg-muted/40">
       <div className="mx-auto grid max-w-7xl gap-10 px-4 py-12 sm:px-6 md:grid-cols-[1.4fr_1fr_1fr_1fr] lg:px-8">
@@ -64,7 +66,7 @@ export function SiteFooter({ categories }: SiteFooterProps) {
       <div className="border-t">
         <div className="mx-auto flex max-w-7xl flex-col gap-2 px-4 py-5 text-sm text-muted-foreground sm:flex-row sm:items-center sm:justify-between sm:px-6 lg:px-8">
           <p>© 2026 Two Brothers Store. All rights reserved.</p>
-          <p>Fresh essentials, ready for everyday orders.</p>
+          <p>Version {appVersion}</p>
         </div>
       </div>
     </footer>

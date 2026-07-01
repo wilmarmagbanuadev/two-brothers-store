@@ -58,3 +58,4 @@ services:
       NEXT_PUBLIC_DIRECTUS_URL: ${PUBLIC_DIRECTUS_URL:-http://localhost:8055}
       DIRECTUS_STATIC_TOKEN: ${DIRECTUS_STATIC_TOKEN:-}
       ADMIN_SESSION_SECRET: ${ADMIN_SESSION_SECRET:-replace-with-a-long-random-secret}
+      APP_VERSION: ${APP_VERSION:-1}
