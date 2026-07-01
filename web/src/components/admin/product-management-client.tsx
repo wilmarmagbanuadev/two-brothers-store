@@ -681,10 +681,10 @@ export function ProductManagementClient() {
       </section>
 
       {isFormOpen ? (
-        <div className="fixed inset-0 z-[100] overflow-y-auto bg-black/70 px-4 py-8 backdrop-blur-sm" role="dialog" aria-modal="true">
+        <div className="fixed inset-0 z-[100] flex items-start justify-center bg-black/70 p-4 backdrop-blur-sm sm:py-8" role="dialog" aria-modal="true">
           <button type="button" className="fixed inset-0 cursor-default" aria-label="Close product form" onClick={closeProductForm} />
-          <Card className="relative mx-auto max-w-2xl shadow-xl">
-            <CardHeader className="flex flex-row items-center justify-between space-y-0">
+          <Card className="relative flex max-h-[calc(100dvh-2rem)] w-full max-w-2xl flex-col overflow-hidden shadow-xl sm:max-h-[calc(100dvh-4rem)]">
+            <CardHeader className="shrink-0 flex flex-row items-center justify-between space-y-0">
               <CardTitle className="flex items-center gap-2">
                 <PackagePlus className="h-5 w-5" />
                 {isEditing ? "Edit Product" : "Add Product"}
@@ -693,7 +693,7 @@ export function ProductManagementClient() {
                 <X className="h-4 w-4" />
               </Button>
             </CardHeader>
-            <CardContent>
+            <CardContent className="min-h-0 flex-1 overflow-y-auto overscroll-contain">
           {error ? (
             <div className="mb-4 rounded-md border border-destructive/30 bg-destructive/10 px-3 py-2 text-sm text-destructive">{error}</div>
           ) : null}

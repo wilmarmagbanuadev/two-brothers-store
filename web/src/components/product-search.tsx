@@ -109,15 +109,15 @@ export function ProductSearch({ categories = [], className, onSearch }: ProductS
       </Button>
 
       {isOpen && isMounted ? createPortal(
-        <div className="fixed inset-0 z-[9999] bg-black/75 px-4 py-20 backdrop-blur-sm" role="dialog" aria-modal="true" aria-label="Search products">
+        <div className="fixed inset-0 z-[9999] flex items-start justify-center bg-black/75 p-4 backdrop-blur-sm sm:py-20" role="dialog" aria-modal="true" aria-label="Search products">
           <button
             type="button"
             className="absolute inset-0 cursor-default"
             aria-label="Close search"
             onClick={closeSearch}
           />
-          <div className="relative mx-auto max-w-2xl overflow-hidden rounded-lg border bg-background shadow-2xl">
-            <div className="flex items-center gap-2 border-b px-4 py-3">
+          <div className="relative flex max-h-[calc(100dvh-2rem)] w-full max-w-2xl flex-col overflow-hidden rounded-lg border bg-background shadow-2xl sm:max-h-[calc(100dvh-10rem)]">
+            <div className="flex shrink-0 items-center gap-2 border-b px-4 py-3">
               <Search className="h-5 w-5 text-muted-foreground" />
               <form onSubmit={handleSubmit} className="flex min-w-0 flex-1 items-center">
                 <Input
@@ -135,7 +135,7 @@ export function ProductSearch({ categories = [], className, onSearch }: ProductS
               </Button>
             </div>
 
-            <div className="grid gap-1 p-3">
+            <div className="grid min-h-0 flex-1 content-start gap-1 overflow-y-auto overscroll-contain p-3">
               <Link
                 href={query.trim() ? `/products?q=${encodeURIComponent(query.trim())}` : "/products"}
                 onClick={handleNavigate}

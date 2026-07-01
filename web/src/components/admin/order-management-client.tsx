@@ -952,13 +952,13 @@ export function OrderManagementClient() {
       <Card
         role={isOrderPanelOpen ? "dialog" : undefined}
         aria-modal={isOrderPanelOpen ? true : undefined}
-        className={`order-1 min-w-0 h-fit xl:order-2 ${
+        className={`order-1 min-w-0 xl:order-2 ${
           isOrderPanelOpen
-            ? "fixed inset-x-3 bottom-3 top-20 z-[101] flex flex-col overflow-hidden"
+            ? "fixed inset-x-3 bottom-3 top-20 z-[101] flex h-auto max-h-[calc(100dvh-5.75rem)] flex-col overflow-hidden"
             : "hidden"
-        } xl:static xl:flex xl:max-h-none xl:flex-col xl:overflow-visible`}
+        } xl:static xl:flex xl:h-fit xl:max-h-none xl:flex-col xl:overflow-visible`}
       >
-        <CardHeader className="flex-row items-start justify-between space-y-0">
+        <CardHeader className="shrink-0 flex-row items-start justify-between space-y-0">
           <div className="min-w-0 space-y-1.5">
             <CardTitle className="break-words">
               {queuedReviewOrder
@@ -986,7 +986,7 @@ export function OrderManagementClient() {
             <X className="h-5 w-5" />
           </Button>
         </CardHeader>
-        <CardContent className="min-h-0 flex-1 overflow-y-auto xl:overflow-visible">
+        <CardContent className="min-h-0 flex-1 overflow-y-auto overscroll-contain xl:overflow-visible">
           {!queuedReviewOrder && success ? <div className="mb-4 rounded-md border border-primary/30 bg-primary/10 px-3 py-2 text-sm text-primary">{success}</div> : null}
           {queuedReviewOrder ? (
             <div className="grid gap-4">

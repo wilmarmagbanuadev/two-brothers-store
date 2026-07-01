@@ -365,7 +365,7 @@ export function CustomerManagementClient() {
 
       {isFormOpen ? (
         <div
-          className="fixed inset-0 z-[100] flex items-start justify-center overflow-y-auto bg-black/60 p-4 pt-16"
+          className="fixed inset-0 z-[100] flex items-start justify-center bg-black/60 p-4 pt-16"
           role="presentation"
           onMouseDown={(event) => {
             if (event.target === event.currentTarget) {
@@ -377,9 +377,9 @@ export function CustomerManagementClient() {
             role="dialog"
             aria-modal="true"
             aria-labelledby="customer-form-title"
-            className="w-full max-w-xl rounded-lg border bg-background shadow-xl"
+            className="flex max-h-[calc(100dvh-5rem)] w-full max-w-xl flex-col overflow-hidden rounded-lg border bg-background shadow-xl"
           >
-            <div className="flex items-start justify-between border-b p-5">
+            <div className="flex shrink-0 items-start justify-between border-b p-5">
               <div>
                 <h2 id="customer-form-title" className="text-xl font-semibold">
                   {isEditing ? "Edit Customer" : "Add Customer"}
@@ -391,7 +391,7 @@ export function CustomerManagementClient() {
               </Button>
             </div>
 
-            <form className="grid gap-4 p-5" onSubmit={handleSubmit}>
+            <form className="grid min-h-0 flex-1 content-start gap-4 overflow-y-auto overscroll-contain p-5" onSubmit={handleSubmit}>
               {error ? (
                 <div className="rounded-md border border-destructive/30 bg-destructive/10 px-3 py-2 text-sm text-destructive">
                   {error}
