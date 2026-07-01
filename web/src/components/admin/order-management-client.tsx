@@ -7,6 +7,7 @@ import {
   ChevronRight,
   ChevronUp,
   CloudOff,
+  Minus,
   Plus,
   Search,
   Trash2,
@@ -114,6 +115,21 @@ function queuedOrderRow(
   };
 }
 
+function queuedOrderItems(queued: QueuedAdminOrder, products: Product[]) {
+  return queued.payload.items.map((item) => {
+    const product = products.find((entry) => entry.id === item.productId);
+    const unitPrice = product ? Number(product.price) : 0;
+
+    return {
+      ...item,
+      name: product?.name ?? "Saved product",
+      sku: product?.sku,
+      unitPrice,
+      lineTotal: unitPrice * Number(item.quantity)
+    };
+  });
+}
+
 function mergeQueuedOrders(
   orders: Order[],
   queuedOrders: QueuedAdminOrder[],
@@ -159,6 +175,69 @@ function money(value: string | number) {
   }).format(Number(value));
 }
 
+function QuantityStepper({
+  value,
+  onChange,
+  onCommit,
+  disabled = false,
+  label
+}: {
+  value: string | number;
+  onChange: (value: number) => void;
+  onCommit?: (value: number) => void;
+  disabled?: boolean;
+  label: string;
+}) {
+  const quantity = Math.max(1, Number(value) || 1);
+
+  function update(nextValue: number, commit = false) {
+    const nextQuantity = Math.max(1, nextValue);
+
+    onChange(nextQuantity);
+    if (commit) {
+      onCommit?.(nextQuantity);
+    }
+  }
+
+  return (
+    <div className="flex h-10 w-full min-w-[112px] items-stretch">
+      <Button
+        type="button"
+        variant="outline"
+        size="icon"
+        className="h-10 w-10 shrink-0 rounded-r-none"
+        aria-label={`Decrease ${label}`}
+        disabled={disabled || quantity <= 1}
+        onClick={() => update(quantity - 1, true)}
+      >
+        <Minus className="h-4 w-4" />
+      </Button>
+      <input
+        type="number"
+        min="1"
+        inputMode="numeric"
+        value={quantity}
+        disabled={disabled}
+        aria-label={label}
+        onChange={(event) => update(Number(event.target.value) || 1)}
+        onBlur={() => onCommit?.(quantity)}
+        className="h-10 min-w-0 flex-1 border-y border-input bg-background px-1 text-center text-sm [appearance:textfield] [&::-webkit-inner-spin-button]:appearance-none [&::-webkit-outer-spin-button]:appearance-none"
+      />
+      <Button
+        type="button"
+        variant="outline"
+        size="icon"
+        className="h-10 w-10 shrink-0 rounded-l-none"
+        aria-label={`Increase ${label}`}
+        disabled={disabled}
+        onClick={() => update(quantity + 1, true)}
+      >
+        <Plus className="h-4 w-4" />
+      </Button>
+    </div>
+  );
+}
+
 function isConnectivityError(error: unknown) {
   const message = error instanceof Error ? error.message : String(error);
 
@@ -196,6 +275,8 @@ export function OrderManagementClient() {
   const [isLoading, setIsLoading] = useState(true);
   const [isSaving, setIsSaving] = useState(false);
   const [reviewOrder, setReviewOrder] = useState<Order | null>(null);
+  const [queuedReviewOrder, setQueuedReviewOrder] = useState<QueuedAdminOrder | null>(null);
+  const [isOrderPanelOpen, setIsOrderPanelOpen] = useState(false);
   const [reviewItems, setReviewItems] = useState<ReviewLine[]>([]);
   const [reviewItemPage, setReviewItemPage] = useState(1);
   const [reviewItemPagination, setReviewItemPagination] = useState({
@@ -475,11 +556,35 @@ export function OrderManagementClient() {
       setReviewItems(data.items.map(toReviewLine));
       setReviewItemPage(data.pagination.page);
       setReviewItemPagination(data.pagination);
+      setQueuedReviewOrder(null);
+      setIsOrderPanelOpen(true);
     } catch (reviewError) {
       setError(reviewError instanceof Error ? reviewError.message : "Unable to load order.");
     } finally {
       setIsReviewLoading(false);
     }
+  }
+
+  function openQueuedOrderReview(queued: QueuedAdminOrder) {
+    setError("");
+    setSuccess("");
+    setReviewOrder(null);
+    setQueuedReviewOrder(queued);
+    setIsOrderPanelOpen(true);
+  }
+
+  function openCreateOrder() {
+    setError("");
+    setSuccess("");
+    setReviewOrder(null);
+    setQueuedReviewOrder(null);
+    setIsOrderPanelOpen(true);
+  }
+
+  function closeOrderPanel() {
+    setReviewOrder(null);
+    setQueuedReviewOrder(null);
+    setIsOrderPanelOpen(false);
   }
 
   async function saveOrderReview() {
@@ -649,6 +754,12 @@ export function OrderManagementClient() {
 
   return (
     <section className="grid gap-6 xl:grid-cols-[minmax(0,1fr)_520px]">
+      <div className="order-1 xl:hidden">
+        <Button type="button" className="w-full" onClick={openCreateOrder}>
+          <Plus className="h-4 w-4" />
+          Add Order
+        </Button>
+      </div>
       <Card className="order-2 min-w-0 xl:order-1">
         <CardHeader>
           <CardTitle>Recent Orders</CardTitle>
@@ -668,18 +779,7 @@ export function OrderManagementClient() {
                 {queuedUtangOrders.map((queued) => {
                   const row = queuedOrderRow(queued, customers, products);
                   const isExpanded = expandedQueuedOrder === queued.clientReference;
-                  const queuedItems = queued.payload.items.map((item) => {
-                    const product = products.find((entry) => entry.id === item.productId);
-                    const unitPrice = product ? Number(product.price) : 0;
-
-                    return {
-                      ...item,
-                      name: product?.name ?? "Saved product",
-                      sku: product?.sku,
-                      unitPrice,
-                      lineTotal: unitPrice * Number(item.quantity)
-                    };
-                  });
+                  const queuedItems = queuedOrderItems(queued, products);
 
                   return (
                     <div
@@ -772,10 +872,23 @@ export function OrderManagementClient() {
                   type="button"
                   variant="outline"
                   size="sm"
-                  onClick={() => openOrderReview(order)}
-                  disabled={isReviewLoading || order.id.startsWith("offline:")}
+                  onClick={() => {
+                    if (order.id.startsWith("offline:")) {
+                      const queued = queuedOrders.find(
+                        (entry) => `offline:${entry.clientReference}` === order.id
+                      );
+
+                      if (queued) {
+                        openQueuedOrderReview(queued);
+                      }
+                      return;
+                    }
+
+                    void openOrderReview(order);
+                  }}
+                  disabled={isReviewLoading}
                 >
-                  {order.id.startsWith("offline:") ? "Queued" : "Review"}
+                  Review
                 </Button>
               </div>
             ))}
@@ -827,16 +940,104 @@ export function OrderManagementClient() {
         </CardContent>
       </Card>
 
-      <Card className="order-1 min-w-0 h-fit xl:order-2">
-        <CardHeader>
-          <CardTitle>{reviewOrder ? `Review ${reviewOrder.order_number}` : "Create Order"}</CardTitle>
-          <CardDescription>
-            {reviewOrder ? "Confirm stock, adjust pending quantities, and update what the customer sees." : "Assign items to a Customer user and choose cash or utang."}
-          </CardDescription>
+      {isOrderPanelOpen ? (
+        <button
+          type="button"
+          className="fixed inset-0 z-[100] bg-black/60 xl:hidden"
+          aria-label="Close order panel"
+          onClick={closeOrderPanel}
+        />
+      ) : null}
+
+      <Card
+        role={isOrderPanelOpen ? "dialog" : undefined}
+        aria-modal={isOrderPanelOpen ? true : undefined}
+        className={`order-1 min-w-0 h-fit xl:order-2 ${
+          isOrderPanelOpen
+            ? "fixed inset-x-3 bottom-3 top-20 z-[101] flex flex-col overflow-hidden"
+            : "hidden"
+        } xl:static xl:flex xl:max-h-none xl:flex-col xl:overflow-visible`}
+      >
+        <CardHeader className="flex-row items-start justify-between space-y-0">
+          <div className="min-w-0 space-y-1.5">
+            <CardTitle className="break-words">
+              {queuedReviewOrder
+                ? `Review Offline ${queuedReviewOrder.clientReference.slice(0, 8)}`
+                : reviewOrder
+                  ? `Review ${reviewOrder.order_number}`
+                  : "Create Order"}
+            </CardTitle>
+            <CardDescription>
+              {queuedReviewOrder
+                ? "This order is saved on this device and waiting to sync."
+                : reviewOrder
+                  ? "Confirm stock, adjust pending quantities, and update what the customer sees."
+                  : "Assign items to a Customer user and choose cash or utang."}
+            </CardDescription>
+          </div>
+          <Button
+            type="button"
+            variant="ghost"
+            size="icon"
+            className="shrink-0 xl:hidden"
+            aria-label="Close order panel"
+            onClick={closeOrderPanel}
+          >
+            <X className="h-5 w-5" />
+          </Button>
         </CardHeader>
-        <CardContent>
-          {success ? <div className="mb-4 rounded-md border border-primary/30 bg-primary/10 px-3 py-2 text-sm text-primary">{success}</div> : null}
-          {reviewOrder ? (
+        <CardContent className="min-h-0 flex-1 overflow-y-auto xl:overflow-visible">
+          {!queuedReviewOrder && success ? <div className="mb-4 rounded-md border border-primary/30 bg-primary/10 px-3 py-2 text-sm text-primary">{success}</div> : null}
+          {queuedReviewOrder ? (
+            <div className="grid gap-4">
+              <div className="rounded-md border bg-muted/20 p-3 text-sm">
+                <div className="font-medium">
+                  {queuedOrderRow(queuedReviewOrder, customers, products).customer_name}
+                </div>
+                <div className="mt-1 text-xs text-muted-foreground">
+                  Saved {new Date(queuedReviewOrder.createdAt).toLocaleString("en-PH")}
+                </div>
+              </div>
+
+              <div className="grid gap-2">
+                {queuedOrderItems(queuedReviewOrder, products).map((item, index) => (
+                  <div
+                    key={`${queuedReviewOrder.clientReference}-${item.productId}-${index}`}
+                    className="grid grid-cols-[minmax(0,1fr)_auto] gap-3 rounded-md border p-3 text-sm"
+                  >
+                    <div className="min-w-0">
+                      <div className="truncate font-medium">{item.name}</div>
+                      <div className="truncate text-xs text-muted-foreground">{item.sku || "No SKU"}</div>
+                      <div className="mt-1 text-xs text-muted-foreground">
+                        {item.quantity} x {money(item.unitPrice)}
+                      </div>
+                    </div>
+                    <span className="font-semibold">{money(item.lineTotal)}</span>
+                  </div>
+                ))}
+              </div>
+
+              {queuedReviewOrder.payload.notes?.trim() ? (
+                <div className="rounded-md border px-3 py-2 text-sm">
+                  <span className="font-medium">Notes:</span> {queuedReviewOrder.payload.notes}
+                </div>
+              ) : null}
+              {queuedReviewOrder.lastError ? (
+                <div className="rounded-md border border-destructive/30 bg-destructive/10 px-3 py-2 text-sm text-destructive">
+                  {queuedReviewOrder.lastError}
+                </div>
+              ) : null}
+              <div className="flex items-center justify-between rounded-md border bg-muted/30 px-3 py-2 text-sm">
+                <span>Total</span>
+                <span className="font-semibold">
+                  {money(queuedOrderRow(queuedReviewOrder, customers, products).total)}
+                </span>
+              </div>
+              <Button type="button" variant="outline" onClick={closeOrderPanel}>
+                Close
+              </Button>
+            </div>
+          ) : reviewOrder ? (
             <div className="grid gap-4">
               <div className="grid gap-3 sm:grid-cols-2">
                 <label className="grid gap-2 text-sm font-medium">
@@ -888,15 +1089,11 @@ export function OrderManagementClient() {
                       <div className="truncate font-medium">{item.productName}</div>
                       <div className="mt-0.5 truncate text-xs text-muted-foreground">{item.productSku || "No SKU"}</div>
                     </div>
-                    <div className="grid grid-cols-[78px_1fr_96px_40px] items-center gap-2">
+                    <div className="grid grid-cols-[112px_minmax(0,1fr)_40px] items-center gap-2 sm:grid-cols-[112px_1fr_96px_40px]">
                     {canEditReviewItems ? (
-                      <input
-                        type="number"
-                        min="1"
+                      <QuantityStepper
                         value={item.quantity}
-                        onChange={(event) => {
-                          const quantity = Math.max(1, Number(event.target.value) || 1);
-
+                        onChange={(quantity) => {
                           setReviewItems((current) =>
                             current.map((entry) =>
                               entry.id === item.id
@@ -910,23 +1107,14 @@ export function OrderManagementClient() {
                           );
                           scheduleReviewItemQuantityUpdate(item.id, quantity);
                         }}
-                        onBlur={(event) =>
-                          commitReviewItemQuantity(item.id, Math.max(1, Number(event.target.value) || 1))
-                        }
-                        onKeyDown={(event) => {
-                          if (event.key === "Enter") {
-                            event.preventDefault();
-                            event.currentTarget.blur();
-                          }
-                        }}
+                        onCommit={(quantity) => commitReviewItemQuantity(item.id, quantity)}
                         disabled={updatingItemId === item.id}
-                        className="h-9 w-full rounded-md border border-input bg-background px-2 text-sm"
-                        aria-label={`Quantity for ${item.productName}`}
+                        label={`quantity for ${item.productName}`}
                       />
                     ) : (
                       <span className="text-muted-foreground">x{item.quantity}</span>
                     )}
-                    <span className="text-muted-foreground">{money(item.unitPrice)}</span>
+                    <span className="hidden text-muted-foreground sm:block">{money(item.unitPrice)}</span>
                     <span className="font-semibold sm:text-right">{money(item.lineTotal)}</span>
                     {canEditReviewItems ? (
                       <Button
@@ -982,7 +1170,7 @@ export function OrderManagementClient() {
                 <Button type="button" onClick={saveOrderReview} disabled={isReviewSaving}>
                   {isReviewSaving ? "Saving..." : isReviewLocked ? "Save Notes" : "Update Order"}
                 </Button>
-                <Button type="button" variant="outline" onClick={() => setReviewOrder(null)}>
+                <Button type="button" variant="outline" onClick={closeOrderPanel}>
                   Cancel
                 </Button>
               </div>
@@ -1062,7 +1250,7 @@ export function OrderManagementClient() {
               <div className="rounded-md border bg-muted/20 p-3">
                 <label className="grid gap-2 text-sm font-medium">
                   Scan or Search Item
-                  <div className="grid gap-2 sm:grid-cols-[1fr_88px_auto]">
+                  <div className="grid gap-2 sm:grid-cols-[minmax(0,1fr)_120px_auto]">
                     <input
                       value={scanQuery}
                       onChange={(event) => setScanQuery(event.target.value)}
@@ -1076,13 +1264,10 @@ export function OrderManagementClient() {
                       placeholder="Barcode, SKU, or product name"
                       autoComplete="off"
                     />
-                    <input
-                      type="number"
-                      min="1"
+                    <QuantityStepper
                       value={scanQuantity}
-                      onChange={(event) => setScanQuantity(event.target.value)}
-                      className="h-10 rounded-md border border-input bg-background px-3 text-sm"
-                      aria-label="Quantity"
+                      onChange={(quantity) => setScanQuantity(String(quantity))}
+                      label="scan quantity"
                     />
                     <Button type="button" onClick={addScannedProduct}>
                       <Plus className="h-4 w-4" />
@@ -1117,7 +1302,7 @@ export function OrderManagementClient() {
               </div>
 
               {items.map((item, index) => (
-                <div key={index} className="grid gap-2 sm:grid-cols-[1fr_88px_40px]">
+                <div key={index} className="grid gap-2 sm:grid-cols-[minmax(0,1fr)_120px_40px]">
                   <select
                     value={item.productId}
                     onChange={(event) =>
@@ -1133,15 +1318,12 @@ export function OrderManagementClient() {
                       </option>
                     ))}
                   </select>
-                  <input
-                    type="number"
-                    min="1"
+                  <QuantityStepper
                     value={item.quantity}
-                    onChange={(event) =>
-                      setItems((current) => current.map((entry, entryIndex) => entryIndex === index ? { ...entry, quantity: event.target.value } : entry))
+                    onChange={(quantity) =>
+                      setItems((current) => current.map((entry, entryIndex) => entryIndex === index ? { ...entry, quantity: String(quantity) } : entry))
                     }
-                    className="h-10 rounded-md border border-input bg-background px-3 text-sm"
-                    required
+                    label={`quantity for item ${index + 1}`}
                   />
                   <Button
                     type="button"

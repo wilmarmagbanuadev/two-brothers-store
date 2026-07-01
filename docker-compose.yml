@@ -43,6 +43,7 @@ services:
       dockerfile: Dockerfile
       args:
         NEXT_PUBLIC_DIRECTUS_URL: ${PUBLIC_DIRECTUS_URL:-http://localhost:8055}
+        NEXT_SERVER_ACTIONS_ENCRYPTION_KEY: ${NEXT_SERVER_ACTIONS_ENCRYPTION_KEY}
     container_name: two-brothers-web
     restart: unless-stopped
     depends_on:
@@ -58,4 +59,5 @@ services:
       NEXT_PUBLIC_DIRECTUS_URL: ${PUBLIC_DIRECTUS_URL:-http://localhost:8055}
       DIRECTUS_STATIC_TOKEN: ${DIRECTUS_STATIC_TOKEN:-}
       ADMIN_SESSION_SECRET: ${ADMIN_SESSION_SECRET:-replace-with-a-long-random-secret}
+      NEXT_SERVER_ACTIONS_ENCRYPTION_KEY: ${NEXT_SERVER_ACTIONS_ENCRYPTION_KEY}
       APP_VERSION: ${APP_VERSION:-1}
