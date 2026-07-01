@@ -6,7 +6,6 @@ const credentialSnapshotKey = "admin-offline-credential:v1";
 const iterations = 310_000;
 const requiredWorkerVersion = 7;
 const authCacheName = "two-brothers-admin-auth";
-const runtimeCacheName = "two-brothers-admin-runtime";
 const offlineAuthUrl = "/__two_brothers_admin_offline_auth__";
 const offlineAuthDuration = 8 * 60 * 60 * 1000;
 
@@ -168,7 +167,20 @@ export async function setOfflineAdminAuthenticated(authenticated: boolean) {
       channel.port1.onmessage = (event) => {
         window.clearTimeout(timeout);
         channel.port1.close();
-        resolve(typeof event.data?.version === "number" ? event.data.version : null);
+        const version = event.data?.version;
+
+        if (typeof version === "number") {
+          resolve(version);
+          return;
+        }
+
+        if (typeof version === "string") {
+          const protocolVersion = Number(version.split("-", 1)[0]);
+          resolve(Number.isFinite(protocolVersion) ? protocolVersion : null);
+          return;
+        }
+
+        resolve(null);
       };
 
       worker.postMessage({
@@ -215,10 +227,8 @@ export async function setOfflineAdminAuthenticated(authenticated: boolean) {
 }
 
 export async function hasOfflineAdminDashboard() {
-  const runtimeCache = await caches.open(runtimeCacheName);
-
   return Boolean(
-    await runtimeCache.match("/dashboard/admin", {
+    await caches.match("/dashboard/admin", {
       ignoreVary: true
     })
   );

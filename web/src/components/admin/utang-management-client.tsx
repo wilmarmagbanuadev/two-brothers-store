@@ -167,7 +167,7 @@ export function UtangManagementClient() {
         </div>
       ) : null}
 
-      <div className="max-w-sm">
+      <div className="w-full max-w-sm">
         <Card>
           <CardContent className="flex items-start justify-between p-5">
             <div>
@@ -179,13 +179,13 @@ export function UtangManagementClient() {
         </Card>
       </div>
 
-      <div className="grid gap-6 xl:grid-cols-[minmax(0,1fr)_420px]">
-        <Card>
+      <div className="grid min-w-0 gap-6 xl:grid-cols-[minmax(0,1fr)_420px]">
+        <Card className="order-2 min-w-0 xl:order-1">
           <CardHeader>
             <CardTitle>Customer Balances</CardTitle>
             <CardDescription>Confirmed utang orders with payments applied oldest first.</CardDescription>
           </CardHeader>
-          <CardContent>
+          <CardContent className="min-w-0">
             <div className="relative mb-4 max-w-sm">
               <Search className="pointer-events-none absolute left-3 top-3 h-4 w-4 text-muted-foreground" />
               <input
@@ -196,7 +196,38 @@ export function UtangManagementClient() {
                 aria-label="Search customer balances"
               />
             </div>
-            <div className="overflow-x-auto rounded-md border">
+            <div className="grid gap-2 md:hidden">
+              {ledgers.map((ledger) => (
+                <div key={ledger.email} className="rounded-md border p-3">
+                  <div className="flex min-w-0 items-start justify-between gap-3">
+                    <div className="min-w-0">
+                      <div className="truncate font-medium">{ledger.name}</div>
+                      <div className="truncate text-xs text-muted-foreground">{ledger.email}</div>
+                    </div>
+                    <div className="shrink-0 text-right">
+                      <div className="font-semibold">{money(ledger.balance)}</div>
+                      <div className="text-xs text-muted-foreground">{ledger.openOrders} open</div>
+                    </div>
+                  </div>
+                  <Button
+                    type="button"
+                    size="sm"
+                    variant="outline"
+                    className="mt-3 w-full"
+                    disabled={ledger.balance <= 0}
+                    onClick={() => selectPaymentCustomer(ledger, true)}
+                  >
+                    Record Payment
+                  </Button>
+                </div>
+              ))}
+              {!isLoading && !ledgers.length ? (
+                <p className="rounded-md border px-4 py-8 text-center text-sm text-muted-foreground">
+                  {balanceSearch.trim() ? "No matching customers found." : "No confirmed utang accounts yet."}
+                </p>
+              ) : null}
+            </div>
+            <div className="hidden max-w-full overflow-x-auto rounded-md border md:block">
               <table className="w-full min-w-[680px] text-sm">
                 <thead className="bg-muted/40 text-left text-xs text-muted-foreground">
                   <tr>
@@ -264,12 +295,12 @@ export function UtangManagementClient() {
           </CardContent>
         </Card>
 
-        <Card className="h-fit">
+        <Card className="order-1 min-w-0 h-fit xl:order-2">
           <CardHeader>
             <CardTitle>Record Payment</CardTitle>
             <CardDescription>Apply a full or partial payment to the oldest open orders.</CardDescription>
           </CardHeader>
-          <CardContent>
+          <CardContent className="min-w-0">
             <form className="grid gap-4" onSubmit={handleSubmit}>
               <label className="grid gap-2 text-sm font-medium">
                 Customer
@@ -346,14 +377,14 @@ export function UtangManagementClient() {
                 ) : null}
               </label>
 
-              <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-1">
+              <div className="grid min-w-0 gap-4 sm:grid-cols-[minmax(0,1fr)_minmax(0,1fr)] xl:grid-cols-1">
                 <label className="grid gap-2 text-sm font-medium">
                   Payment Date
                   <input
                     type="datetime-local"
                     value={paymentDate}
                     onChange={(event) => setPaymentDate(event.target.value)}
-                    className="h-10 rounded-md border border-input bg-background px-3 text-sm"
+                    className="h-10 w-full min-w-0 rounded-md border border-input bg-background px-3 text-sm"
                     required
                   />
                 </label>
@@ -362,7 +393,7 @@ export function UtangManagementClient() {
                   <select
                     value={paymentMethod}
                     onChange={(event) => setPaymentMethod(event.target.value)}
-                    className="h-10 rounded-md border border-input bg-background px-3 text-sm"
+                    className="h-10 w-full min-w-0 rounded-md border border-input bg-background px-3 text-sm"
                   >
                     <option value="cash">Cash</option>
                     <option value="gcash">GCash</option>
@@ -400,13 +431,49 @@ export function UtangManagementClient() {
         </Card>
       </div>
 
-      <Card>
+      <Card className="min-w-0">
         <CardHeader>
           <CardTitle>Payment History</CardTitle>
           <CardDescription>Recently recorded customer payments.</CardDescription>
         </CardHeader>
-        <CardContent>
-          <div className="overflow-x-auto rounded-md border">
+        <CardContent className="min-w-0">
+          <div className="grid gap-2 md:hidden">
+            {payments.map((payment) => (
+              <div key={payment.id} className="rounded-md border p-3">
+                <div className="flex items-start justify-between gap-3">
+                  <div className="min-w-0">
+                    <div className="truncate font-medium">{payment.customerName}</div>
+                    <div className="truncate text-xs text-muted-foreground">{payment.customerEmail}</div>
+                  </div>
+                  <span className="shrink-0 font-semibold">{money(payment.amount)}</span>
+                </div>
+                <dl className="mt-3 grid grid-cols-2 gap-3 border-t pt-3 text-sm">
+                  <div>
+                    <dt className="text-xs text-muted-foreground">Date</dt>
+                    <dd>{formatDate(payment.paymentDate)}</dd>
+                  </div>
+                  <div>
+                    <dt className="text-xs text-muted-foreground">Method</dt>
+                    <dd className="capitalize">{payment.paymentMethod.replace("_", " ")}</dd>
+                  </div>
+                  <div>
+                    <dt className="text-xs text-muted-foreground">Received By</dt>
+                    <dd>{payment.receivedBy || "-"}</dd>
+                  </div>
+                  <div className="min-w-0">
+                    <dt className="text-xs text-muted-foreground">Notes</dt>
+                    <dd className="truncate">{payment.notes || "-"}</dd>
+                  </div>
+                </dl>
+              </div>
+            ))}
+            {!isLoading && !payments.length ? (
+              <p className="rounded-md border px-4 py-8 text-center text-sm text-muted-foreground">
+                No payments recorded yet.
+              </p>
+            ) : null}
+          </div>
+          <div className="hidden max-w-full overflow-x-auto rounded-md border md:block">
             <table className="w-full min-w-[760px] text-sm">
               <thead className="bg-muted/40 text-left text-xs text-muted-foreground">
                 <tr>

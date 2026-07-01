@@ -1,7 +1,17 @@
 "use client";
 
 import { FormEvent, useCallback, useEffect, useMemo, useRef, useState } from "react";
-import { ChevronLeft, ChevronRight, CloudOff, Plus, Search, Trash2, X } from "lucide-react";
+import {
+  ChevronDown,
+  ChevronLeft,
+  ChevronRight,
+  ChevronUp,
+  CloudOff,
+  Plus,
+  Search,
+  Trash2,
+  X
+} from "lucide-react";
 
 import {
   loadAdminOrderData,
@@ -163,6 +173,7 @@ export function OrderManagementClient() {
   const [products, setProducts] = useState<Product[]>([]);
   const [orders, setOrders] = useState<Order[]>([]);
   const [queuedOrders, setQueuedOrders] = useState<QueuedAdminOrder[]>([]);
+  const [expandedQueuedOrder, setExpandedQueuedOrder] = useState<string | null>(null);
   const [orderPage, setOrderPage] = useState(1);
   const [orderLimit, setOrderLimit] = useState(10);
   const [orderPagination, setOrderPagination] = useState({
@@ -638,7 +649,7 @@ export function OrderManagementClient() {
 
   return (
     <section className="grid gap-6 xl:grid-cols-[minmax(0,1fr)_520px]">
-      <Card>
+      <Card className="order-2 min-w-0 xl:order-1">
         <CardHeader>
           <CardTitle>Recent Orders</CardTitle>
           <CardDescription>Cash and utang orders recorded by the store.</CardDescription>
@@ -656,28 +667,90 @@ export function OrderManagementClient() {
               <div className="grid gap-2">
                 {queuedUtangOrders.map((queued) => {
                   const row = queuedOrderRow(queued, customers, products);
-                  const itemNames = queued.payload.items
-                    .map((item) => products.find((product) => product.id === item.productId)?.name ?? "Product")
-                    .join(", ");
+                  const isExpanded = expandedQueuedOrder === queued.clientReference;
+                  const queuedItems = queued.payload.items.map((item) => {
+                    const product = products.find((entry) => entry.id === item.productId);
+                    const unitPrice = product ? Number(product.price) : 0;
+
+                    return {
+                      ...item,
+                      name: product?.name ?? "Saved product",
+                      sku: product?.sku,
+                      unitPrice,
+                      lineTotal: unitPrice * Number(item.quantity)
+                    };
+                  });
 
                   return (
                     <div
                       key={queued.clientReference}
-                      className="grid gap-1 rounded-md border bg-muted/20 px-3 py-2 text-sm sm:grid-cols-[1fr_auto] sm:items-center"
+                      className="overflow-hidden rounded-md border bg-muted/20 text-sm"
                     >
-                      <div className="min-w-0">
-                        <div className="truncate font-medium">{row.customer_name}</div>
-                        <div className="truncate text-xs text-muted-foreground">{itemNames}</div>
-                        {queued.lastError ? (
-                          <div className="mt-1 truncate text-xs text-destructive">{queued.lastError}</div>
-                        ) : null}
-                      </div>
-                      <div className="flex items-center justify-between gap-3 sm:block sm:text-right">
-                        <div className="font-semibold">{money(row.total)}</div>
-                        <div className="text-xs text-muted-foreground">
-                          {new Date(queued.createdAt).toLocaleString("en-PH")}
+                      <button
+                        type="button"
+                        className="grid w-full gap-2 px-3 py-3 text-left hover:bg-muted/40 sm:grid-cols-[minmax(0,1fr)_auto_auto] sm:items-center"
+                        aria-expanded={isExpanded}
+                        onClick={() =>
+                          setExpandedQueuedOrder((current) =>
+                            current === queued.clientReference ? null : queued.clientReference
+                          )
+                        }
+                      >
+                        <div className="min-w-0">
+                          <div className="truncate font-medium">{row.customer_name}</div>
+                          <div className="text-xs text-muted-foreground">
+                            {queued.payload.items.length} item{queued.payload.items.length === 1 ? "" : "s"} waiting to sync
+                          </div>
                         </div>
-                      </div>
+                        <div className="flex items-center justify-between gap-3 sm:block sm:text-right">
+                          <div className="font-semibold">{money(row.total)}</div>
+                          <div className="text-xs text-muted-foreground">
+                            {new Date(queued.createdAt).toLocaleString("en-PH")}
+                          </div>
+                        </div>
+                        {isExpanded ? (
+                          <ChevronUp className="h-4 w-4 text-muted-foreground" />
+                        ) : (
+                          <ChevronDown className="h-4 w-4 text-muted-foreground" />
+                        )}
+                      </button>
+                      {isExpanded ? (
+                        <div className="border-t bg-background px-3 py-3">
+                          <div className="grid gap-2">
+                            {queuedItems.map((item, index) => (
+                              <div
+                                key={`${queued.clientReference}-${item.productId}-${index}`}
+                                className="grid grid-cols-[minmax(0,1fr)_auto] gap-x-3 gap-y-1 border-b pb-2 last:border-0 last:pb-0 sm:grid-cols-[minmax(0,1fr)_70px_100px_100px]"
+                              >
+                                <div className="min-w-0">
+                                  <div className="truncate font-medium">{item.name}</div>
+                                  <div className="truncate text-xs text-muted-foreground">
+                                    {item.sku || "No SKU"}
+                                  </div>
+                                </div>
+                                <div className="text-right sm:text-left">
+                                  <span className="text-xs text-muted-foreground sm:hidden">Qty </span>
+                                  {item.quantity}
+                                </div>
+                                <div className="hidden text-right text-muted-foreground sm:block">
+                                  {money(item.unitPrice)}
+                                </div>
+                                <div className="text-right font-medium">{money(item.lineTotal)}</div>
+                              </div>
+                            ))}
+                          </div>
+                          {row.notes ? (
+                            <div className="mt-3 border-t pt-3 text-xs text-muted-foreground">
+                              <span className="font-medium text-foreground">Notes:</span> {row.notes}
+                            </div>
+                          ) : null}
+                          {queued.lastError ? (
+                            <div className="mt-3 rounded-md border border-destructive/30 bg-destructive/10 px-3 py-2 text-xs text-destructive">
+                              {queued.lastError}
+                            </div>
+                          ) : null}
+                        </div>
+                      ) : null}
                     </div>
                   );
                 })}
@@ -754,7 +827,7 @@ export function OrderManagementClient() {
         </CardContent>
       </Card>
 
-      <Card className="h-fit">
+      <Card className="order-1 min-w-0 h-fit xl:order-2">
         <CardHeader>
           <CardTitle>{reviewOrder ? `Review ${reviewOrder.order_number}` : "Create Order"}</CardTitle>
           <CardDescription>

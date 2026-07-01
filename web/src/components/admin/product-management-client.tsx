@@ -381,10 +381,10 @@ export function ProductManagementClient() {
   }
 
   return (
-    <div className="rounded-lg border bg-muted/35 p-3">
-      <section className="grid gap-4">
-            <div className="flex flex-col gap-3 rounded-md border bg-background p-4 sm:flex-row sm:items-center sm:justify-between">
-              <div>
+    <div className="w-full min-w-0 max-w-full overflow-hidden rounded-lg border bg-muted/35 p-2 sm:p-3">
+      <section className="grid w-full min-w-0 max-w-full gap-4">
+            <div className="flex min-w-0 flex-col gap-3 rounded-md border bg-background p-4 sm:flex-row sm:items-center sm:justify-between">
+              <div className="min-w-0">
                 <h2 className="text-2xl font-bold tracking-normal">Products</h2>
                 <p className="text-sm text-muted-foreground">Manage inventory, pricing, status, and storefront visibility.</p>
               </div>
@@ -409,7 +409,7 @@ export function ProductManagementClient() {
                 const Icon = stat.icon;
 
                 return (
-                  <Card key={stat.label}>
+                  <Card key={stat.label} className="min-w-0 overflow-hidden">
                     <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
                       <CardTitle className="text-xs font-medium uppercase tracking-[0.12em] text-muted-foreground">{stat.label}</CardTitle>
                       <Icon className="h-4 w-4 text-muted-foreground" />
@@ -423,10 +423,10 @@ export function ProductManagementClient() {
               })}
             </div>
 
-            <Card>
-              <CardHeader className="gap-4 border-b">
-                <div className="flex flex-col gap-3 md:flex-row md:items-center md:justify-between">
-                  <div className="relative md:w-80">
+            <Card className="min-w-0">
+              <CardHeader className="min-w-0 gap-4 border-b p-4 sm:p-6">
+                <div className="flex min-w-0 flex-col gap-3 md:flex-row md:items-center md:justify-between">
+                  <div className="relative min-w-0 md:w-80">
                     <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
                     <Input
                       value={searchQuery}
@@ -438,7 +438,7 @@ export function ProductManagementClient() {
                       className="pl-9"
                     />
                   </div>
-                  <div className="flex flex-wrap items-center gap-2">
+                  <div className="grid min-w-0 grid-cols-2 gap-2 min-[420px]:flex min-[420px]:flex-wrap min-[420px]:items-center">
                     <Button type="button" variant="outline" size="sm">
                       <Filter className="h-4 w-4" />
                       Filter
@@ -461,7 +461,7 @@ export function ProductManagementClient() {
                   </div>
                 </div>
               </CardHeader>
-              <CardContent className="p-0">
+              <CardContent className="min-w-0 p-0">
                 {error ? (
                   <div className="m-4 rounded-md border border-destructive/30 bg-destructive/10 px-3 py-2 text-sm text-destructive">
                     <p>{error}</p>
@@ -481,7 +481,75 @@ export function ProductManagementClient() {
                   <p className="p-4 text-sm text-muted-foreground">Loading products...</p>
                 ) : (
                   <>
-                    <div className="overflow-x-auto">
+                    <div className="grid w-full min-w-0 max-w-full gap-3 p-3 sm:p-4 md:hidden">
+                      {products.map((product) => (
+                        <div key={product.id} className="w-full min-w-0 max-w-full overflow-hidden rounded-md border p-3">
+                          <div className="flex min-w-0 items-start gap-3">
+                            <div className="h-12 w-12 shrink-0 overflow-hidden rounded-md bg-muted">
+                              {product.image_url ? (
+                                <Image
+                                  src={product.image_url}
+                                  alt=""
+                                  width={48}
+                                  height={48}
+                                  unoptimized
+                                  className="h-full w-full object-cover"
+                                />
+                              ) : (
+                                <div className="flex h-full w-full items-center justify-center">
+                                  <Package className="h-4 w-4 text-muted-foreground" />
+                                </div>
+                              )}
+                            </div>
+                            <div className="min-w-0 flex-1">
+                              <div className="truncate font-medium">{product.name}</div>
+                              <div className="truncate text-xs text-muted-foreground">{product.slug}</div>
+                              <span className={`mt-2 inline-flex rounded-full px-2 py-1 text-xs font-medium capitalize ${statusClass(product.status)}`}>
+                                {product.status}
+                              </span>
+                            </div>
+                          </div>
+
+                          <dl className="mt-3 grid grid-cols-2 gap-x-4 gap-y-3 border-t pt-3 text-sm">
+                            <div className="min-w-0">
+                              <dt className="text-xs text-muted-foreground">SKU</dt>
+                              <dd className="truncate">{product.sku || "-"}</dd>
+                            </div>
+                            <div className="min-w-0">
+                              <dt className="text-xs text-muted-foreground">Barcode</dt>
+                              <dd className="truncate">{product.barcode || "-"}</dd>
+                            </div>
+                            <div className="min-w-0">
+                              <dt className="text-xs text-muted-foreground">Category</dt>
+                              <dd className="truncate">{product.category_id?.name ?? "Uncategorized"}</dd>
+                            </div>
+                            <div>
+                              <dt className="text-xs text-muted-foreground">Stock</dt>
+                              <dd>{product.stock_quantity}</dd>
+                            </div>
+                          </dl>
+
+                          <div className="mt-3 flex items-center justify-between border-t pt-3">
+                            <span className="font-semibold">{money(product.price)}</span>
+                            <Button
+                              type="button"
+                              size="sm"
+                              variant="outline"
+                              className="shrink-0"
+                              onClick={() => openEditProduct(product)}
+                              disabled={isOfflineMode}
+                            >
+                              <Edit className="h-4 w-4" />
+                              Edit
+                            </Button>
+                          </div>
+                        </div>
+                      ))}
+                      {!products.length ? (
+                        <p className="py-6 text-center text-sm text-muted-foreground">No products found.</p>
+                      ) : null}
+                    </div>
+                    <div className="hidden max-w-full overflow-x-auto md:block">
                       <table className="w-full min-w-[1050px] text-left text-sm">
                         <thead className="border-b bg-muted/40 text-xs text-muted-foreground">
                           <tr>

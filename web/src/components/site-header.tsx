@@ -3,11 +3,13 @@
 import { useState } from "react";
 import Image from "next/image";
 import Link from "next/link";
+import { usePathname } from "next/navigation";
 import { ChevronDown, ChevronUp, Menu, User, X } from "lucide-react";
 
 import { CartLink } from "@/components/cart-link";
 import { ProductSearch } from "@/components/product-search";
 import { Button } from "@/components/ui/button";
+import { openAdminNavigationEvent } from "@/lib/admin-navigation";
 import type { DirectusRoleName } from "@/lib/current-user";
 import type { Category } from "@/lib/directus";
 
@@ -21,9 +23,11 @@ type SiteHeaderProps = {
 };
 
 export function SiteHeader({ categories, currentRole }: SiteHeaderProps) {
+  const pathname = usePathname();
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   const isCustomer = currentRole === "Customer";
   const isAdmin = currentRole === "Admin" || currentRole === "Administrator";
+  const isAdminDashboard = pathname === "/dashboard/admin" || pathname.startsWith("/dashboard/admin/");
 
   function closeMobileMenu() {
     setIsMobileMenuOpen(false);
@@ -92,16 +96,23 @@ export function SiteHeader({ categories, currentRole }: SiteHeaderProps) {
             variant="outline"
             size="icon"
             className="md:hidden"
-            aria-label="Toggle menu"
-            aria-expanded={isMobileMenuOpen}
-            onClick={() => setIsMobileMenuOpen((isOpen) => !isOpen)}
+            aria-label={isAdminDashboard ? "Open admin navigation" : "Toggle menu"}
+            aria-expanded={isAdminDashboard ? undefined : isMobileMenuOpen}
+            onClick={() => {
+              if (isAdminDashboard) {
+                window.dispatchEvent(new Event(openAdminNavigationEvent));
+                return;
+              }
+
+              setIsMobileMenuOpen((isOpen) => !isOpen);
+            }}
           >
-            {isMobileMenuOpen ? <X className="h-4 w-4" /> : <Menu className="h-4 w-4" />}
+            {!isAdminDashboard && isMobileMenuOpen ? <X className="h-4 w-4" /> : <Menu className="h-4 w-4" />}
           </Button>
         </div>
       </div>
 
-      {isMobileMenuOpen ? (
+      {isMobileMenuOpen && !isAdminDashboard ? (
         <div className="border-t bg-background md:hidden">
           <div className="mx-auto grid max-w-7xl gap-6 px-4 py-5 sm:px-6">
             <nav className="grid gap-1">

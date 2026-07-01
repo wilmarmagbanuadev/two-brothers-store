@@ -187,7 +187,7 @@ export function CustomerManagementClient() {
         </div>
       ) : null}
 
-      <Card>
+      <Card className="min-w-0">
         <CardHeader className="gap-4 sm:flex-row sm:items-center sm:justify-between sm:space-y-0">
           <div>
             <CardTitle>Customer Users</CardTitle>
@@ -200,7 +200,7 @@ export function CustomerManagementClient() {
             Add Customer
           </Button>
         </CardHeader>
-        <CardContent>
+        <CardContent className="min-w-0">
           <div className="mb-4 flex flex-col gap-3 lg:flex-row lg:items-center lg:justify-between">
             <div className="relative w-full max-w-md">
               <Search className="pointer-events-none absolute left-3 top-3 h-4 w-4 text-muted-foreground" />
@@ -230,7 +230,41 @@ export function CustomerManagementClient() {
             </div>
           </div>
 
-          <div className="overflow-x-auto rounded-md border">
+          <div className="grid gap-2 md:hidden">
+            {customers.map((customer) => (
+              <div key={customer.email} className="rounded-md border p-3">
+                <div className="flex min-w-0 items-start justify-between gap-3">
+                  <div className="min-w-0">
+                    <div className="flex items-center gap-2 font-medium">
+                      <Users className="h-4 w-4 shrink-0 text-muted-foreground" />
+                      <span className="truncate">{displayName(customer)}</span>
+                    </div>
+                    <div className="mt-1 truncate text-xs text-muted-foreground">{customer.email}</div>
+                  </div>
+                  <span className="shrink-0 rounded-md bg-muted px-2 py-1 text-xs capitalize">
+                    {customer.status}
+                  </span>
+                </div>
+                <Button
+                  type="button"
+                  size="sm"
+                  variant="outline"
+                  className="mt-3 w-full"
+                  onClick={() => openEditForm(customer)}
+                >
+                  <Edit className="h-4 w-4" />
+                  Edit Customer
+                </Button>
+              </div>
+            ))}
+            {!isLoading && !customers.length ? (
+              <p className="rounded-md border px-4 py-10 text-center text-sm text-muted-foreground">
+                No Customer users found.
+              </p>
+            ) : null}
+          </div>
+
+          <div className="hidden max-w-full overflow-x-auto rounded-md border md:block">
             <table className="w-full min-w-[680px] text-sm">
               <thead className="bg-muted/40 text-left text-xs text-muted-foreground">
                 <tr>

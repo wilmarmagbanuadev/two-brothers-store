@@ -1,12 +1,31 @@
-const WORKER_VERSION = 8;
-const CACHE_NAME = "two-brothers-admin-shell-v8";
-const RUNTIME_CACHE = "two-brothers-admin-runtime";
+importScripts("/admin-sw-version.js");
+
+const DEPLOYMENT_VERSION = self.__TWO_BROTHERS_ADMIN_BUILD__ || "development";
+const WORKER_PROTOCOL_VERSION = 10;
+const CACHE_NAME = `two-brothers-admin-shell-${DEPLOYMENT_VERSION}`;
+const RUNTIME_CACHE = `two-brothers-admin-runtime-${DEPLOYMENT_VERSION}`;
 const AUTH_CACHE_NAME = "two-brothers-admin-auth";
 const PRODUCT_IMAGE_CACHE = "two-brothers-product-images";
 const OFFLINE_URL = "/admin-offline.html";
 const OFFLINE_AUTH_URL = "/__two_brothers_admin_offline_auth__";
 const OFFLINE_AUTH_DURATION = 8 * 60 * 60 * 1000;
-const SHELL_ASSETS = [OFFLINE_URL, "/circle_logo_no_border.png", "/favicon.png"];
+const SHELL_ASSETS = [
+  OFFLINE_URL,
+  "/admin-manifest.webmanifest",
+  "/circle_logo_no_border.png",
+  "/favicon.png"
+];
+
+async function fetchWithTimeout(request, timeout = 4000) {
+  const controller = new AbortController();
+  const timer = setTimeout(() => controller.abort(), timeout);
+
+  try {
+    return await fetch(request, { signal: controller.signal });
+  } finally {
+    clearTimeout(timer);
+  }
+}
 
 async function setOfflineAuthenticated(authenticated) {
   const cache = await caches.open(AUTH_CACHE_NAME);
@@ -57,24 +76,9 @@ self.addEventListener("activate", (event) => {
     (async () => {
       const keys = await caches.keys();
       const previousRuntimeKeys = keys.filter((key) =>
-        key.startsWith("two-brothers-admin-runtime-")
+        key !== RUNTIME_CACHE &&
+        (key === "two-brothers-admin-runtime" || key.startsWith("two-brothers-admin-runtime-"))
       );
-      const runtimeCache = await caches.open(RUNTIME_CACHE);
-
-      for (const key of previousRuntimeKeys) {
-        const previousCache = await caches.open(key);
-        const requests = await previousCache.keys();
-
-        for (const request of requests) {
-          if (!(await runtimeCache.match(request))) {
-            const response = await previousCache.match(request);
-
-            if (response) {
-              await runtimeCache.put(request, response);
-            }
-          }
-        }
-      }
 
       await Promise.all(
         keys
@@ -94,7 +98,11 @@ self.addEventListener("message", (event) => {
   if (event.data?.type === "SET_ADMIN_OFFLINE_AUTH") {
     event.waitUntil(
       setOfflineAuthenticated(true).then(() => {
-        event.ports[0]?.postMessage({ authenticated: true, version: WORKER_VERSION });
+        event.ports[0]?.postMessage({
+          authenticated: true,
+          version: WORKER_PROTOCOL_VERSION,
+          deployment: DEPLOYMENT_VERSION
+        });
       })
     );
     return;
@@ -103,7 +111,11 @@ self.addEventListener("message", (event) => {
   if (event.data?.type === "CLEAR_ADMIN_OFFLINE_AUTH") {
     event.waitUntil(
       setOfflineAuthenticated(false).then(() => {
-        event.ports[0]?.postMessage({ authenticated: false, version: WORKER_VERSION });
+        event.ports[0]?.postMessage({
+          authenticated: false,
+          version: WORKER_PROTOCOL_VERSION,
+          deployment: DEPLOYMENT_VERSION
+        });
       })
     );
     return;
@@ -158,8 +170,14 @@ self.addEventListener("fetch", (event) => {
   if (url.pathname.startsWith("/_next/static/")) {
     event.respondWith(
       caches.open(RUNTIME_CACHE).then(async (cache) => {
+        const cached = await cache.match(request);
+
+        if (cached) {
+          return cached;
+        }
+
         try {
-          const response = await fetch(request);
+          const response = await fetchWithTimeout(request);
 
           if (response.ok) {
             await cache.put(request, response.clone());
@@ -184,7 +202,7 @@ self.addEventListener("fetch", (event) => {
     event.respondWith(
       caches.open(RUNTIME_CACHE).then(async (cache) => {
         try {
-          const response = await fetch(request);
+          const response = await fetchWithTimeout(request);
 
           if (response.ok && !response.redirected && !isRscRequest) {
             await cache.put("/sign-in/admin", response.clone());
@@ -222,7 +240,7 @@ self.addEventListener("fetch", (event) => {
   event.respondWith(
     caches.open(RUNTIME_CACHE).then(async (cache) => {
       try {
-        const response = await fetch(request);
+        const response = await fetchWithTimeout(request);
 
         if (response.ok && !response.redirected) {
           await cache.put(cacheUrl.toString(), response.clone());

@@ -40,9 +40,9 @@ export default async function AdminLayout({ children }: Readonly<{ children: Rea
   return (
     <OfflineAdminGuard required={!hasAdminSession}>
       <>
-        <div className="mx-auto flex max-w-[1500px] gap-6 px-4 sm:px-6 lg:px-8">
+        <div className="mx-auto flex w-full min-w-0 max-w-[1500px] flex-col gap-6 overflow-x-clip px-4 sm:px-6 lg:flex-row lg:px-8">
           <AdminSidebar />
-          <div className="min-w-0 flex-1">
+          <div className="min-w-0 max-w-full flex-1 overflow-x-clip">
             <DirectusConnectionStatus offlineOnly className="mt-4 lg:hidden" />
             {children}
           </div>

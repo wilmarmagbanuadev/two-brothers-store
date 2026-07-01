@@ -114,6 +114,7 @@ export function AdminPwa() {
   useEffect(() => {
     let isCancelled = false;
     let hasWarmedCache = false;
+    let updateTimer: number | undefined;
 
     const warmOnce = () => {
       if (isCancelled || hasWarmedCache || !navigator.serviceWorker.controller || !navigator.onLine) {
@@ -125,6 +126,11 @@ export function AdminPwa() {
     };
 
     const handleControllerChange = () => {
+      if (navigator.onLine) {
+        window.location.reload();
+        return;
+      }
+
       hasWarmedCache = false;
       warmOnce();
     };
@@ -137,6 +143,9 @@ export function AdminPwa() {
         })
         .then(async (registration) => {
           await waitForActiveWorker(registration);
+          updateTimer = window.setInterval(() => {
+            void registration.update();
+          }, 5 * 60 * 1000);
           const registrations = await navigator.serviceWorker.getRegistrations();
 
           await Promise.all(
@@ -165,6 +174,9 @@ export function AdminPwa() {
 
     return () => {
       isCancelled = true;
+      if (updateTimer !== undefined) {
+        window.clearInterval(updateTimer);
+      }
       navigator.serviceWorker.removeEventListener("controllerchange", handleControllerChange);
       window.removeEventListener("beforeinstallprompt", handleInstallPrompt);
       window.removeEventListener("appinstalled", handleInstalled);

@@ -28,6 +28,20 @@
       img { width: 88px; height: 88px; object-fit: contain; }
       h1 { margin: 20px 0 8px; font-size: 24px; }
       p { margin: 0; color: #587068; line-height: 1.5; }
+      nav {
+        display: grid;
+        gap: 10px;
+        margin-top: 24px;
+      }
+      a {
+        display: block;
+        border: 1px solid #d9e5e1;
+        border-radius: 6px;
+        color: #10231d;
+        padding: 11px 18px;
+        font-weight: 600;
+        text-decoration: none;
+      }
       button {
         margin-top: 24px;
         border: 0;
@@ -44,8 +58,14 @@
   <body>
     <main>
       <img src="/circle_logo_no_border.png" alt="Two Brothers Store">
-      <h1>Admin is offline</h1>
-      <p>Reconnect before viewing or changing store transactions.</p>
+      <h1>Working offline</h1>
+      <p>Open a prepared admin page. Saved orders and catalog data remain on this device.</p>
+      <nav aria-label="Offline admin pages">
+        <a href="/dashboard/admin">Overview</a>
+        <a href="/dashboard/admin/orders">Orders and queued utang</a>
+        <a href="/dashboard/admin/products">Products</a>
+        <a href="/dashboard/admin/customers">Customers</a>
+      </nav>
       <button type="button" onclick="location.reload()">Try Again</button>
     </main>
   </body>

@@ -1,7 +1,6 @@
 "use client";
 
 import { FormEvent, useEffect, useState } from "react";
-import { useRouter } from "next/navigation";
 
 import { loginAdmin } from "@/app/sign-in/actions";
 import { Button } from "@/components/ui/button";
@@ -22,8 +21,13 @@ function isConnectivityError(error: unknown) {
   );
 }
 
+function isDeploymentMismatchError(error: unknown) {
+  const message = error instanceof Error ? error.message : String(error);
+
+  return /failed to find server action|older or newer deployment/i.test(message);
+}
+
 export function AdminLoginForm() {
-  const router = useRouter();
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [error, setError] = useState("");
@@ -62,8 +66,7 @@ export function AdminLoginForm() {
       if (result.ok) {
         await enrollOfflineAdminCredential(email, password);
         await setOfflineAdminAuthenticated(true);
-        router.push("/dashboard/admin");
-        router.refresh();
+        window.location.assign("/dashboard/admin");
         return;
       }
 
@@ -92,6 +95,11 @@ export function AdminLoginForm() {
           : "The email or password is incorrect."
       );
     } catch (loginError) {
+      if (isDeploymentMismatchError(loginError)) {
+        window.location.reload();
+        return;
+      }
+
       if (!isConnectivityError(loginError)) {
         setError(loginError instanceof Error ? loginError.message : "Unable to log in.");
         return;
