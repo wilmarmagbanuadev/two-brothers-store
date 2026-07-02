@@ -1,10 +1,17 @@
 import Link from "next/link";
 import { User } from "lucide-react";
 
+import { SuspendedAccountModal } from "@/components/auth/suspended-account-modal";
 import { UserLoginForm } from "@/components/auth/user-login-form";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 
-export default function UserSignInPage() {
+export default async function UserSignInPage({
+  searchParams
+}: {
+  searchParams: Promise<{ account?: string }>;
+}) {
+  const { account } = await searchParams;
+
   return (
     <main className="mx-auto flex min-h-[calc(100vh-4rem)] max-w-md items-center px-4 py-10">
       <Card className="w-full">
@@ -22,6 +29,7 @@ export default function UserSignInPage() {
           </p>
         </CardContent>
       </Card>
+      {account === "suspended" ? <SuspendedAccountModal /> : null}
     </main>
   );
 }

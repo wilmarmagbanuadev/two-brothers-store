@@ -19,6 +19,7 @@ const nextConfig: NextConfig = {
   output: "standalone",
   deploymentId: pwaDeploymentId(),
   images: {
+    unoptimized: true,
     remotePatterns: [
       {
         protocol: "https",

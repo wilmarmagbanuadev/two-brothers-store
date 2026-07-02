@@ -1,4 +1,5 @@
 import { cookies } from "next/headers";
+import { redirect } from "next/navigation";
 
 import {
   cookieOptions,
@@ -9,6 +10,7 @@ import {
 } from "@/lib/admin-session";
 import { refreshDirectusSession } from "@/lib/directus-refresh";
 import { roleNameFromAccessToken } from "@/lib/directus-role";
+import { directusSystemRequest } from "@/lib/directus-system";
 
 const directusUrl = process.env.DIRECTUS_URL ?? process.env.NEXT_PUBLIC_DIRECTUS_URL ?? "http://localhost:8055";
 
@@ -29,10 +31,17 @@ type DirectusMeResponse = {
     first_name: string | null;
     last_name: string | null;
     location: string | null;
+    status?: string | null;
     role?: string | {
       id?: string;
       name?: string;
     };
+  };
+};
+
+type DirectusCustomerStatusResponse = {
+  data?: {
+    status?: string | null;
   };
 };
 
@@ -142,7 +151,7 @@ export async function customerDirectusRequest<T>(
 export async function currentCustomer(session: CustomerSession) {
   const response = await customerDirectusRequest<DirectusMeResponse>(
     session,
-    "/users/me?fields=id,email,first_name,last_name,location,role,role.name"
+    "/users/me?fields=id,email,first_name,last_name,location,status,role,role.name"
   );
   const role = response.data.role;
   const roleName = (typeof role === "object" ? role.name : null)
@@ -150,6 +159,19 @@ export async function currentCustomer(session: CustomerSession) {
 
   if (roleName !== "Customer") {
     throw new Error("Please use a customer account.");
+  }
+
+  let status = response.data.status;
+
+  if (!status) {
+    const statusResponse = await directusSystemRequest<DirectusCustomerStatusResponse>(
+      `/users/${encodeURIComponent(response.data.id)}?fields=status`
+    );
+    status = statusResponse?.data?.status;
+  }
+
+  if (status !== "active") {
+    redirect("/auth/customer/suspended");
   }
 
   return response.data;

@@ -1,8 +1,7 @@
 import Link from "next/link";
 
-import { Button } from "@/components/ui/button";
+import { CustomerSignUpForm } from "@/components/auth/customer-sign-up-form";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { Input } from "@/components/ui/input";
 
 export default function SignUpPage() {
   return (
@@ -10,15 +9,10 @@ export default function SignUpPage() {
       <Card className="w-full">
         <CardHeader>
           <CardTitle>Create Account</CardTitle>
-          <CardDescription>Start shopping and managing orders faster.</CardDescription>
+          <CardDescription>Register as a customer. Store approval is required before sign-in.</CardDescription>
         </CardHeader>
         <CardContent>
-          <form className="space-y-4">
-            <Input type="text" placeholder="Full name" />
-            <Input type="email" placeholder="Email address" />
-            <Input type="password" placeholder="Password" />
-            <Button className="w-full" type="submit">Sign Up</Button>
-          </form>
+          <CustomerSignUpForm />
           <p className="mt-4 text-center text-sm text-muted-foreground">
             Already registered?{" "}
             <Link href="/sign-in/user" className="font-medium text-primary">

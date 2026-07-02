@@ -1,6 +1,7 @@
 import { redirect } from "next/navigation";
 
 import { CustomerSidebar } from "@/components/customer/customer-sidebar";
+import { currentCustomer, customerSessionFromCookies } from "@/lib/customer-directus";
 import { getCurrentDirectusRole } from "@/lib/current-user";
 
 export default async function UserDashboardLayout({ children }: Readonly<{ children: React.ReactNode }>) {
@@ -9,6 +10,9 @@ export default async function UserDashboardLayout({ children }: Readonly<{ child
   if (currentRole !== "Customer") {
     redirect("/sign-in/user");
   }
+
+  const session = await customerSessionFromCookies();
+  await currentCustomer(session);
 
   return (
     <div className="mx-auto flex max-w-[1500px] gap-6 px-4 sm:px-6 lg:px-8">
