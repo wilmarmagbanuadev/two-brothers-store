@@ -16,7 +16,7 @@ services:
       DB_PORT: ${POSTGRES_PORT:-5432}
       DB_DATABASE: ${POSTGRES_DATABASE:-tb_store}
       DB_USER: ${POSTGRES_USER:-postgres}
-      DB_PASSWORD: ${POSTGRES_PASSWORD:-admin}
+      DB_PASSWORD: ${POSTGRES_PASSWORD:-postgres}
       PUBLIC_URL: ${PUBLIC_DIRECTUS_URL:-http://localhost:8055}
       CORS_ENABLED: "true"
       CORS_ORIGIN: ${WEB_PUBLIC_URL:-http://localhost:3000}

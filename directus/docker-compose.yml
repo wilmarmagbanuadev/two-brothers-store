@@ -14,7 +14,7 @@ services:
       DB_PORT: 5432
       DB_DATABASE: tb_store
       DB_USER: postgres
-      DB_PASSWORD: admin
+      DB_PASSWORD: postgres
       PUBLIC_URL: http://localhost:8055
       CORS_ENABLED: "true"
       CORS_ORIGIN: http://localhost:3000
